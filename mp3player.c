@@ -9,6 +9,7 @@
 
 #define BUFF_SIZE   8192
 struct mp3_file {
+    int aaaa;
     int fd;     //文件描述符
     int sound_fd;   //声卡描述符
     int fpos;   //当前位置
