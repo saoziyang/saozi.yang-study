@@ -1,0 +1,11 @@
+切割图片的信息
+SDL_Rect clip[4];
+clip[0].x = 0 //横坐标0
+clip[0].y = 100 //纵坐标100
+clip[0].w = 100 //长100
+clip[0].h = 100 //宽100
+
+//screen:要填充的suface
+//&screen->clip_rect:要填充的区域
+//SDL_MapRGB( screen->format, 0xFF, 0xFF, 0xFF ):要填充的颜色
+SDL_FillRect( screen, &screen->clip_rect, SDL_MapRGB( screen->format, 0xFF, 0xFF, 0xFF ) );
