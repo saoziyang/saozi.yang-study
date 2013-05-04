@@ -1,3 +1,6 @@
+教程地址
+http://www.lazyfoo.net/SDL_tutorials/
+
 切割图片的信息
 SDL_Rect clip[4];
 clip[0].x = 0 //横坐标0
