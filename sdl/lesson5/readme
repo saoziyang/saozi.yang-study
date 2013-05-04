@@ -1,0 +1,12 @@
+//得到要设置的颜色码，并且颜色码要保持和屏幕相同的格式
+//example: 
+        red: 0xff, 0x00, 0x00   //不显示红色
+        green: 0x00, 0xff, 0x00
+        blue: 0x00, 0x00, 0xff
+
+Uint32 SDL_MapRGB
+    (const SDL_PixelFormat * const format,
+        const Uint8 r, const Uint8 g, const Uint8 b)
+
+//用于设置图片的颜色码
+SDL_SetColorKey(frontground, SDL_SRCCOLORKEY, colorkey);
