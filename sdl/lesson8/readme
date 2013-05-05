@@ -1,0 +1,16 @@
+教程地址
+http://www.lazyfoo.net/SDL_tutorials/
+
+TTF_Font *font = NULL;
+//打开一个字体文件
+font = TTF_OpenFont( "lazy.ttf", 28 );
+
+
+//将要显示的文字渲染成一个surface
+message = TTF_RenderText_Solid( font, 
+            "The quick brown fox jumps over the lazy dog", textColor );
+
+//关闭字体文件
+TTF_CloseFont(font);
+
+
