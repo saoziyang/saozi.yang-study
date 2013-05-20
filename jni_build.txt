@@ -1,0 +1,38 @@
+在eclipse下建立一个新的工程
+添加自己需要的JNI方法
+public native String stringFromJni();
+
+hello-jni 是需要装载的目标动态库
+static {
+    System.loadLibrary("hello-jni");
+}
+
+cd $工程目录
+
+javah -classpath bin/class/ com.example.hellojni.HelloJni
+                            --------------------
+                            |        包名     |  类名   | 
+
+生成 com_example_hellojni_HelloJni.h
+参照头文件，实现hello-jni
+
+#include <string.h>
+#include <jni.h>
+JNIEXPORT jstring JNICALL Java_com_example_hellojni_HelloJni_stringFromJni
+  (JNIEnv *env, jobject thiz)
+{
+    return (*env)->NewStringUTF(env, "I'm saozi !");
+}
+
+添加Android.mk，编译用
+LOCAL_PATH := $(call my-dir)
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := hello-jni
+LOCAL_SRC_FILES := hello-jni.c
+
+include $(BUILD_SHARED_LIBRARY)
+
+执行ndk-build，会生成libhell-jni.so到libs目录
+执行即可实现
