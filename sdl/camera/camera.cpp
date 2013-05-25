@@ -11,6 +11,13 @@ camera::camera()
         printf("open video error\n");
         exit(-1);
     }
+
+    file = open("./file.yuv", O_RDWR | O_NONBLOCK, 0);
+    if (file < 0) {
+        printf("open video error\n");
+        exit(-1);
+    }
+
     buffers = NULL;
 }
 
@@ -88,13 +95,123 @@ void camera::qbuf()
 	    printf("VIDIOC_STREAMON failed\n");
 }
 
+void camera::yuv422toyuv420(unsigned char* Y, unsigned char* Cb,
+                unsigned char* Cr, unsigned char* out, int w, int h)
+{
+    unsigned char* p = NULL;
+    unsigned char* p1 = Y;
+    unsigned char* p2 = Cb;
+    unsigned char* p3 = Cr;
+
+    memcpy(out, p1, w*h);
+    p = out + w*h;
+
+    int x, y;
+    for (y = 0; y < h/2; y++) {
+        for (x = 0; x < w/2; x++) {
+            *p = *p2;
+            p++;
+            p2++;
+        }
+        p2 += w/2;
+    }
+
+    for (y = 0; y < h/2; y++) {
+        for (x = 0; x < w/2; x++) {
+            *p = *p3;
+            p++;
+            p3++;
+        }
+        p3 += w/2;
+    }
+
+}
+
+void camera::flip_color(void* t)
+{
+    int i = 0;
+    int m = 0;
+    unsigned char* temp = (unsigned char*) t; 
+
+    unsigned char*  Y = (unsigned char*) malloc(640*480);
+    unsigned char* Cb = (unsigned char*) malloc(640*480/2);
+    unsigned char* Cr = (unsigned char*) malloc(640*480/2);
+    unsigned char* out = (unsigned char*) malloc((640*480*3)/2);
+    //unsigned char* out = (unsigned char*) malloc((640*480*2));
+
+    //分离Y
+    while (i < 640*480*2) {
+        Y[m] = *((unsigned char *)(temp + i));
+        i = i + 2;
+        m++;
+    }
+
+    //分离Cb
+    i = 1;
+    m = 0;
+    while (i < 640*480*2) {
+        Cb[m] = *((unsigned char *)(temp + i));
+        i = i + 4;
+        m++;
+    }
+
+    //分离Cr
+    i = 3;
+    m = 0;
+    while (i < 640*480*2) {
+        Cr[m] = *((unsigned char *)(temp + i));
+        i = i + 4;
+        m++;
+    }
+
+    //memcpy(out, Y, 640*480);
+    //memcpy((void *)(out+640*480), Cb, 640*480/2);
+    //memcpy((void *)(out+640*480+640*480/2), Cr, 640*480/2);
+
+    yuv422toyuv420(Y, Cb, Cr, out, 640, 480);
+    
+    free(Y);
+    free(Cb);
+    free(Cr);
+    Y = NULL;
+    Cb = NULL;
+    Cr = NULL;
+
+    write(file, out, (640*480*3)/2);
+    //send_buff((void *)out);
+    free(out);
+    out = NULL;
+}
+
+//static void* camera::thread_loop(void* t)
+void* camera::thread_loop(void* args)
+{
+    ARGS* arg = (ARGS *)args;
+
+    camera* pthis = arg->pThis;
+    void* t = arg->temp;
+#if 1
+    unsigned char* temp = (unsigned char*)malloc(640*480*2);
+
+    memcpy(temp, t, 640*480*2);
+    pthis->flip_color(temp);
+
+    free(temp);
+    temp = NULL;
+#endif
+    return NULL;
+}
 
 void camera::read_frame()
 {
+    pthread_t id;
+
 	struct v4l2_buffer buf;
+    int i = 0;
+    int m = 0;
     void* temp = NULL;
 
-	CLEAR(buf);
+    CLEAR(buf);
 	buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	buf.memory = V4L2_MEMORY_MMAP;
 
@@ -105,6 +222,15 @@ void camera::read_frame()
 	temp = buffers[buf.index].start;
 
     ov_sdl_display(((unsigned char*)temp));
+
+    ARGS* args = new ARGS();
+
+    args->pThis = this;
+    args->temp = temp;
+
+    //pthread_create(&id, NULL, &camera::thread_loop, (void *)temp);
+    pthread_create(&id, NULL, &camera::thread_loop, (void *)args);
+    //flip_color(temp);
     //update_screen();
 
 	ioctl(fd, VIDIOC_QBUF, &buf);	//再将其入列
@@ -119,4 +245,5 @@ camera::~camera()
 {
     free(buffers); 
     close(fd);
+    close(file);
 }
