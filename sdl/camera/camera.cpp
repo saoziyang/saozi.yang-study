@@ -3,6 +3,7 @@
 #define CAM_W   640
 #define CAM_H   480
 
+static int is_send_over = 0;
 camera::camera()
 {
     printf("%s\n", __func__);
@@ -19,6 +20,7 @@ camera::camera()
     }
 
     buffers = NULL;
+    send_buffer = malloc(640*480*2);
 }
 
 void camera::setup_camera()
@@ -136,8 +138,8 @@ void camera::flip_color(void* t)
     unsigned char*  Y = (unsigned char*) malloc(640*480);
     unsigned char* Cb = (unsigned char*) malloc(640*480/2);
     unsigned char* Cr = (unsigned char*) malloc(640*480/2);
-    unsigned char* out = (unsigned char*) malloc((640*480*3)/2);
-    //unsigned char* out = (unsigned char*) malloc((640*480*2));
+    //unsigned char* out = (unsigned char*) malloc((640*480*3)/2);
+    unsigned char* out = (unsigned char*) malloc((640*480*2));
 
     //分离Y
     while (i < 640*480*2) {
@@ -164,11 +166,14 @@ void camera::flip_color(void* t)
         m++;
     }
 
-    //memcpy(out, Y, 640*480);
-    //memcpy((void *)(out+640*480), Cb, 640*480/2);
-    //memcpy((void *)(out+640*480+640*480/2), Cr, 640*480/2);
+    memcpy(out, Y, 640*480);
+    memcpy((void *)(out+640*480), Cb, 640*480/2);
+    memcpy((void *)(out+640*480+640*480/2), Cr, 640*480/2);
 
-    yuv422toyuv420(Y, Cb, Cr, out, 640, 480);
+    //memcpy((void *)(out+640*480), Cr, 640*480/2);
+    //memcpy((void *)(out+640*480+640*480/2), Cb, 640*480/2);
+
+    //yuv422toyuv420(Y, Cb, Cr, out, 640, 480);
     
     free(Y);
     free(Cb);
@@ -177,24 +182,32 @@ void camera::flip_color(void* t)
     Cb = NULL;
     Cr = NULL;
 
-    write(file, out, (640*480*3)/2);
-    //send_buff((void *)out);
+    //write(file, out, (640*480*3)/2);
+    send_buff((void *)out);
     free(out);
     out = NULL;
 }
 
-//static void* camera::thread_loop(void* t)
 void* camera::thread_loop(void* args)
 {
     ARGS* arg = (ARGS *)args;
-
     camera* pthis = arg->pThis;
     void* t = arg->temp;
 #if 1
     unsigned char* temp = (unsigned char*)malloc(640*480*2);
 
-    memcpy(temp, t, 640*480*2);
-    pthis->flip_color(temp);
+    pthis->init_server();
+
+    //pthis->send_buff((void *)t);
+    while (1) {
+            //printf("send buff\n");
+            pthis->m_lock();
+            memcpy(temp, t, 640*480*2);
+            pthis->m_unlock();
+            //pthis->flip_color(temp);
+            pthis->send_buff((void*)temp);
+    }
+
 
     free(temp);
     temp = NULL;
@@ -204,7 +217,6 @@ void* camera::thread_loop(void* args)
 
 void camera::read_frame()
 {
-    pthread_t id;
 
 	struct v4l2_buffer buf;
     int i = 0;
@@ -223,13 +235,10 @@ void camera::read_frame()
 
     ov_sdl_display(((unsigned char*)temp));
 
-    ARGS* args = new ARGS();
-
-    args->pThis = this;
-    args->temp = temp;
-
-    //pthread_create(&id, NULL, &camera::thread_loop, (void *)temp);
-    pthread_create(&id, NULL, &camera::thread_loop, (void *)args);
+    m_lock();
+    //printf("create thread\n");
+    memcpy(send_buffer, (const void*)temp, 640*480*2);
+    m_unlock();
     //flip_color(temp);
     //update_screen();
 

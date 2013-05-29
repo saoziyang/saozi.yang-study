@@ -3,14 +3,30 @@
 #include "def_inc.h"
 #include "camera.h"
 
+void clean_up()
+{
+    printf("%s\n", __func__);
+    SDL_Quit();
+    return;
+}
+
 int main()
 {
     static bool quite = false;
     class camera cam;
+    pthread_t id;
 
     cam.setup_camera();
     cam.cam_mmap();
     cam.qbuf();
+    //cam.init_server();
+
+    ARGS* args = new ARGS();
+
+    args->pThis = &cam;
+    args->temp = cam.send_buffer;
+
+    pthread_create(&id, NULL, &camera::thread_loop, (void *)args);
 
     while (quite != true) {
         cam.start();
@@ -30,15 +46,17 @@ int main()
 		switch (select(cam.get_fd() + 1, &fds, NULL, NULL, &tv)) {
             case -1:
 				continue;
-			    printf("select err/n");
+			    printf("select err\n");
             case 0:
-                fprintf(stderr, "select timeout\n");
+                printf("select timeout\n");
                 break;
             default:
+                //printf("read frame\n");
 		        cam.read_frame();
                 break;
         }
 #endif
+        //printf("----\n");
         while(SDL_PollEvent(cam.get_event())) {
             if (cam.get_event()->type == SDL_QUIT) {
                 quite = true;
@@ -52,5 +70,6 @@ int main()
         }
     }
 
+    clean_up();
     return 0;
 }
