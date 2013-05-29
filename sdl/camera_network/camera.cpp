@@ -3,22 +3,27 @@
 #define CAM_W   640
 #define CAM_H   480
 
+static int recv_flag = 0;
+
 camera::camera()
 {
-    printf("%s\n", __func__);
-    fd = open("/dev/video0", O_RDWR | O_NONBLOCK, 0);
-    if (fd < 0) {
-        printf("open video error\n");
-        exit(-1);
-    }
+    //printf("%s\n", __func__);
+    //fd = open("/dev/video0", O_RDWR | O_NONBLOCK, 0);
+    //if (fd < 0) {
+    //    printf("open video error\n");
+    //    exit(-1);
+    //}
 
-    file = open("./file.yuv", O_RDWR | O_NONBLOCK, 0);
-    if (file < 0) {
-        printf("open video error\n");
-        exit(-1);
-    }
+    //file = open("./file.yuv", O_RDWR | O_NONBLOCK, 0);
+    //if (file < 0) {
+    //    printf("open video error\n");
+    //    exit(-1);
+    //}
 
     buffers = NULL;
+    recv_over = 0;
+
+    recv_buffer = malloc(640*480*2);
 }
 
 void camera::setup_camera()
@@ -189,56 +194,34 @@ void* camera::thread_loop(void* args)
     void* temp = arg->temp;
 #if 1
 
-    //memcpy(temp, t, 640*480*2);
-    pthis->recv_buff(temp);
+    //pthis->init_client();
 
-
-    pthis->ov_sdl_display(((unsigned char*)temp));
-
-    pthis->update_screen();
-    //pthis->flip_color(temp);
-
-    //free(temp);
-    //temp = NULL;
+    while (1) {
+        pthis->m_lock();
+        pthis->recv_buff(temp);
+        pthis->m_unlock();
+        //printf("read\n");
+    }
+    //pthis->ov_sdl_display(((unsigned char*)temp));
+    //pthis->update_screen();
 #endif
     return NULL;
 }
 
 void camera::read_frame()
 {
-    pthread_t id;
 
-	//struct v4l2_buffer buf;
-    //int i = 0;
-    //int m = 0;
-    //void* temp = malloc(640*480*3/2);
     void* temp = malloc(640*480*2);
 
-    //recv_buff(temp);
+    m_lock();
+    memcpy(temp, recv_buffer, 640*480*2);
+    m_unlock();
 
-    //CLEAR(buf);
-	//buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	//buf.memory = V4L2_MEMORY_MMAP;
-
-	//ioctl(fd, VIDIOC_DQBUF, &buf);	//出列采集的帧缓冲
-    ////assert(buf.index < 1);
-
-    ////printf("buf.index:%x\n", buf.index);
-	//temp = buffers[buf.index].start;
-
+    //update_screen();
     //ov_sdl_display(((unsigned char*)temp));
-
-    ARGS* args = new ARGS();
-
-    args->pThis = this;
-    args->temp = temp;
-
-    ////pthread_create(&id, NULL, &camera::thread_loop, (void *)temp);
-    pthread_create(&id, NULL, &camera::thread_loop, (void *)args);
-    ////flip_color(temp);
-    ////update_screen();
-
-	//ioctl(fd, VIDIOC_QBUF, &buf);	//再将其入列
+    ov_sdl_display(((unsigned char*)temp));
+    free(temp);
+    temp = NULL;
     return;
 }
 

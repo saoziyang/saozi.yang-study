@@ -39,6 +39,8 @@ class camera : public sdl_opt, public Timer, public network
         };
         struct buffer *buffers;
     public:
+        void *recv_buffer;
+        int recv_over;
         camera();
         static void* thread_loop(void* args);
         void setup_camera();

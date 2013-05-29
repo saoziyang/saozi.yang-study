@@ -27,8 +27,8 @@ sdl_opt::sdl_opt()
         }
 
         //overlay = SDL_CreateYUVOverlay(640, 480, SDL_YVYU_OVERLAY, screen);
-        //overlay = SDL_CreateYUVOverlay(640, 480, SDL_YUY2_OVERLAY, screen);
-        overlay = SDL_CreateYUVOverlay(640, 480, SDL_IYUV_OVERLAY, screen);
+        overlay = SDL_CreateYUVOverlay(640, 480, SDL_YUY2_OVERLAY, screen);
+        //overlay = SDL_CreateYUVOverlay(640, 480, SDL_IYUV_OVERLAY, screen);
         if ( overlay == NULL ) {
             return;
         }
@@ -82,9 +82,10 @@ void sdl_opt::ov_sdl_display(unsigned char* p)
     //SDL_LockYUVOverlay(overlay);
     //memcpy(dst, p, 640*480*2);
     //overlay->pixels[0] = p;
-    memcpy(overlay->pixels[0], p, 640*480);
-    memcpy(overlay->pixels[1], p+640*480, 640*480/2);
-    memcpy(overlay->pixels[2], p+640*480 + 640*480/2, 640*480/2);
+    memcpy(overlay->pixels[0], p, 640*480*2);
+    //memcpy(overlay->pixels[1], p+640*480, 640*480/2);
+    //memcpy(overlay->pixels[2], p+640*480 + 640*480/2, 640*480/2);
+
     //SDL_UnlockYUVOverlay(overlay);
     //SDL_UnlockSurface(screen); 
 

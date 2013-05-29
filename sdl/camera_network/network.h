@@ -8,6 +8,7 @@
 #include<netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <pthread.h>
 
 
 
@@ -18,12 +19,16 @@ private:
     int sockfd;
 	struct sockaddr_in  servaddr;
 	struct sockaddr_in  clientaddr;
+    pthread_mutex_t mutex;
 public:
     network();
     ~network();
     int init_server();
     int init_client();
     int get_network_fd();
+
+    void m_lock();
+    void m_unlock();
     int send_buff(void* buff); 
     int recv_buff(void* buff);
 };
