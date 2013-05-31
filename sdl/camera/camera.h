@@ -4,6 +4,7 @@
 #include "sdl_opt.h"
 #include "timer.h"
 #include "network.h"
+#include "msx264.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
@@ -21,7 +22,7 @@ struct ARGS{
     void* temp;
 };
 
-class camera : public sdl_opt, public Timer, public network
+class camera : public sdl_opt, public Timer, public network, public msx264
 {
     private:
         int fd;

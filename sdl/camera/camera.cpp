@@ -13,11 +13,7 @@ camera::camera()
         exit(-1);
     }
 
-    file = open("./file.yuv", O_RDWR | O_NONBLOCK, 0);
-    if (file < 0) {
-        printf("open video error\n");
-        exit(-1);
-    }
+    
 
     buffers = NULL;
     send_buffer = malloc(640*480*2);
@@ -173,7 +169,8 @@ void camera::flip_color(void* t)
     //memcpy((void *)(out+640*480), Cr, 640*480/2);
     //memcpy((void *)(out+640*480+640*480/2), Cb, 640*480/2);
 
-    //yuv422toyuv420(Y, Cb, Cr, out, 640, 480);
+    yuv422toyuv420(Y, Cb, Cr, out, 640, 480);
+    msx264_encoder(out);
     
     free(Y);
     free(Cb);
@@ -183,7 +180,7 @@ void camera::flip_color(void* t)
     Cr = NULL;
 
     //write(file, out, (640*480*3)/2);
-    send_buff((void *)out);
+    //send_buff((void *)out);
     free(out);
     out = NULL;
 }
@@ -197,6 +194,8 @@ void* camera::thread_loop(void* args)
     unsigned char* temp = (unsigned char*)malloc(640*480*2);
 
     pthis->init_server();
+    pthis->msx264_encoder_open();
+    pthis->msx264_pic_init();
 
     //pthis->send_buff((void *)t);
     while (1) {
@@ -204,8 +203,8 @@ void* camera::thread_loop(void* args)
             pthis->m_lock();
             memcpy(temp, t, 640*480*2);
             pthis->m_unlock();
-            //pthis->flip_color(temp);
-            pthis->send_buff((void*)temp);
+            pthis->flip_color(temp);
+            //pthis->send_buff((void*)temp);
     }
 
 
